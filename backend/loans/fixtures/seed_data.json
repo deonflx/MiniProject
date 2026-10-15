@@ -1,0 +1,84 @@
+[
+{
+  "model": "sessions.session",
+  "pk": "64wsd5wr89cgh1n3nk5tmjs1hdiwczeq",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQAP9lz4ZA6S7Qo3e_gfBYpGpKUtqT8d9Nkx70OjOZN_iwb9XvnVc_Z5hAweWXxZCevBwiP8JybyK1ZVvnKI5EnLaLW8v8up7t36CGXmEC5syZizMkdXHDaImNY0WYFKHJWDRFq-QwIEVkWQhtSE6OhRGtixo-X-saN5o:1xH2ln:drmsgpKBPH2lonCGTb_DOPcOZ_KRIvpPtuBM8xFB_KY",
+    "expire_date": "2026-10-28T17:28:03.176Z"
+  }
+},
+{
+  "model": "loans.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$NGpuEO6CMyxCrqGRarbRiL$nDB/U29RSb0K2oA4Gem2U7B7VhsNQyWc13ykEUMIorE=",
+    "last_login": "2026-10-14T17:28:03.157Z",
+    "is_superuser": false,
+    "username": "deonnjr10@gmail.com",
+    "first_name": "Deon Felix A L",
+    "last_name": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-10-14T17:28:01.848Z",
+    "email": "deonnjr10@gmail.com",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "loans.chatsession",
+  "pk": 1,
+  "fields": {
+    "session_id": "session_23jsf9",
+    "user": [
+      "deonnjr10@gmail.com"
+    ],
+    "stage": "sales",
+    "profile": {},
+    "state": {},
+    "logs": [
+      {
+        "role": "user",
+        "content": "hi"
+      }
+    ]
+  }
+},
+{
+  "model": "loans.chatsession",
+  "pk": 2,
+  "fields": {
+    "session_id": "session_is8kap",
+    "user": [
+      "deonnjr10@gmail.com"
+    ],
+    "stage": "sales",
+    "profile": {},
+    "state": {},
+    "logs": [
+      {
+        "role": "user",
+        "content": "hi"
+      }
+    ]
+  }
+},
+{
+  "model": "loans.chatsession",
+  "pk": 3,
+  "fields": {
+    "session_id": "session_xbv44k",
+    "user": [
+      "deonnjr10@gmail.com"
+    ],
+    "stage": "sales",
+    "profile": {},
+    "state": {},
+    "logs": [
+      {
+        "role": "user",
+        "content": "hi"
+      }
+    ]
+  }
+}
+]
