@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 
 def _safe_provider_error(exc):
     detail = str(exc)
-    for name in ("LLM_API_KEY", "CEREBRAS_API_KEY", "GROQ_API_KEY"):
+    for name in ("GEMINI_API_KEY", "LLM_API_KEY", "CEREBRAS_API_KEY", "GROQ_API_KEY"):
         secret = os.getenv(name)
         if secret:
             detail = detail.replace(secret, "[redacted]")
     return f"{type(exc).__name__}: {detail}"[:500]
+
 
 def body(request):
     try: return json.loads(request.body or "{}")
@@ -100,15 +101,29 @@ def ocr_upload(request):
     if not file: return JsonResponse({"error": "No file uploaded"}, status=400)
     if file.size > 8 * 1024 * 1024: return JsonResponse({"error": "File must be smaller than 8 MB"}, status=400)
     if file.content_type not in {"image/jpeg", "image/png", "image/webp"}: return JsonResponse({"error": "Upload a JPEG, PNG, or WebP image"}, status=400)
-    key = os.getenv("GROQ_API_KEY")
-    if not key and "groq.com" in os.getenv("LLM_BASE_URL", "").lower():
-        key = os.getenv("LLM_API_KEY")
-    if not key: return JsonResponse({"error": "OCR is not configured. Add GROQ_API_KEY to backend/.env."}, status=503)
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("LLM_API_KEY") or os.getenv("GROQ_API_KEY")
+    if not key: return JsonResponse({"error": "OCR is not configured. Add GEMINI_API_KEY to backend/.env."}, status=503)
+    base_url = os.getenv("LLM_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/").rstrip("/")
+    endpoint = f"{base_url}/chat/completions"
+    model = os.getenv("LLM_MODEL", "gemini-2.5-flash")
     import base64, requests
     image = base64.b64encode(file.read()).decode()
-    payload = {"model": "meta-llama/llama-4-scout-17b-16e-instruct", "messages": [{"role": "user", "content": [{"type": "text", "text": "Extract name, job title and salary from salary slips; name, Aadhaar number and date of birth (YYYY-MM-DD) from Aadhaar cards; name and PAN from PAN cards. Return only labeled extracted fields."}, {"type": "image_url", "image_url": {"url": f"data:{file.content_type};base64,{image}"}}]}]}
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Extract name, job title and salary from salary slips; name, Aadhaar number and date of birth (YYYY-MM-DD) from Aadhaar cards; name and PAN from PAN cards. Return only labeled extracted fields."},
+                    {"type": "image_url", "image_url": {"url": f"data:{file.content_type};base64,{image}"}}
+                ]
+            }
+        ]
+    }
     try:
-        result = requests.post("https://api.groq.com/openai/v1/chat/completions", headers={"Authorization": f"Bearer {key}"}, json=payload, timeout=60)
-        result.raise_for_status(); text = result.json()["choices"][0]["message"]["content"]
+        result = requests.post(endpoint, headers={"Authorization": f"Bearer {key}"}, json=payload, timeout=60)
+        result.raise_for_status()
+        text = result.json()["choices"][0]["message"]["content"]
         return JsonResponse({"text": text})
     except Exception as exc: return JsonResponse({"error": f"OCR failed: {exc}"}, status=502)
+

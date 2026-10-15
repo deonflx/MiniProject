@@ -24,21 +24,20 @@ Never invent record data, loan products, eligibility results, or completed verif
 
 
 def make_graph(session_id: str, user_id: int):
-    api_key = os.getenv("LLM_API_KEY") or os.getenv("CEREBRAS_API_KEY") or os.getenv("GROQ_API_KEY")
+    api_key = (
+        os.getenv("GEMINI_API_KEY")
+        or os.getenv("LLM_API_KEY")
+        or os.getenv("GROQ_API_KEY")
+        or os.getenv("CEREBRAS_API_KEY")
+    )
     if not api_key:
-        raise RuntimeError("Configure LLM_API_KEY or CEREBRAS_API_KEY in backend/.env to enable the loan assistant.")
+        raise RuntimeError("Configure GEMINI_API_KEY or LLM_API_KEY in backend/.env to enable the loan assistant.")
 
-    if os.getenv("LLM_API_KEY"):
-        base_url = os.getenv("LLM_BASE_URL", "https://api.cerebras.ai/v1")
-        model = os.getenv("LLM_MODEL", "gpt-oss-120b")
-    elif os.getenv("CEREBRAS_API_KEY"):
-        base_url = os.getenv("LLM_BASE_URL", "https://api.cerebras.ai/v1")
-        model = os.getenv("LLM_MODEL", "gpt-oss-120b")
-    else:
-        base_url = os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1")
-        model = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")
+    base_url = os.getenv("LLM_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+    model = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 
     llm = ChatOpenAI(model=model, api_key=api_key, base_url=base_url, temperature=0.3)
+
     tools = build_tools(session_id, user_id)
     llm_with_tools = llm.bind_tools(tools)
     tools_by_name = {item.name: item for item in tools}

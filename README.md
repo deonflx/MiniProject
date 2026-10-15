@@ -6,8 +6,7 @@ Loan Assistant is now split into a Django REST backend and a React/Vite frontend
 
 - Python 3.11 or newer (Python 3.11–3.13 avoids the current LangChain compatibility warning on Python 3.14)
 - Node.js 20 or newer
-- A Cerebras or Groq API key for the LangGraph assistant
-- A Groq API key for document image OCR (optional when using Groq for chat)
+- A Google Gemini API key for the LangGraph assistant and document OCR
 
 ## Start the backend
 
@@ -22,7 +21,8 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Set `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` in `backend/.env` for the LangGraph assistant. The defaults use Cerebras; you can instead set `CEREBRAS_API_KEY` or `GROQ_API_KEY` and leave `LLM_API_KEY` blank. Set `GROQ_API_KEY` to enable OCR. The API listens on `http://localhost:8000`; manage loan products and verification records at `/admin/`.
+Set `GEMINI_API_KEY` (or `LLM_API_KEY`), `LLM_BASE_URL`, and `LLM_MODEL` in `backend/.env` for the LangGraph assistant and OCR. The default model is `gemini-2.5-flash`. The API listens on `http://localhost:8000`; manage loan products and verification records at `/admin/`.
+
 
 ## Start the frontend
 
