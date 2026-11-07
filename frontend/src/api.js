@@ -4,7 +4,7 @@ function csrfToken() {
   return document.cookie.split('; ').find((cookie) => cookie.startsWith('csrftoken='))?.split('=')[1];
 }
 
-export function apiFetch(path: string, options: RequestInit = {}) {
+export function apiFetch(path, options = {}) {
   const headers = new Headers(options.headers);
   if (options.method && !['GET', 'HEAD', 'OPTIONS'].includes(options.method.toUpperCase())) {
     const token = csrfToken();
@@ -12,3 +12,4 @@ export function apiFetch(path: string, options: RequestInit = {}) {
   }
   return fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' });
 }
+

@@ -4,9 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "start": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "build": "vite build",
+    "start": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.0",
@@ -18,10 +17,6 @@
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "tailwindcss": "^4"
   }
 }

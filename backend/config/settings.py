@@ -24,21 +24,14 @@ TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIR
     "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
-if DATABASE_URL and "[YOUR-PASSWORD]" not in DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True if ("supabase" in DATABASE_URL or "sslmode=require" in DATABASE_URL) else False,
-        )
-    }
-else:
-    if DATABASE_URL and "[YOUR-PASSWORD]" in DATABASE_URL:
-        import warnings
-        warnings.warn("DATABASE_URL contains '[YOUR-PASSWORD]'. Please set your actual database password in backend/.env to connect to cloud PostgreSQL.")
-    DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": BASE_DIR / "db.sqlite3"}}
+import dj_database_url
+import os
+
+DATABASES = {
+    'default': dj_database_url.parse(
+        os.environ.get('DATABASE_URL')
+    )
+}
 
 
 AUTH_PASSWORD_VALIDATORS = [

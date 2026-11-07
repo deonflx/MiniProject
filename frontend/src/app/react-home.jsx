@@ -5,23 +5,18 @@ import LoginSignup from '../components/react-login-signup';
 import { apiFetch, API_BASE } from '../api';
 import { LogOut, User as UserIcon, ImagePlus, Loader2 } from 'lucide-react';
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [sessionId, setSessionId] = useState('');
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [stage, setStage] = useState<'sales' | 'kyc' | 'credit' | 'loan_selection' | 'docs' | 'done'>('sales');
-  const [pdfPath, setPdfPath] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [stage, setStage] = useState('sales');
+  const [pdfPath, setPdfPath] = useState(null);
+  const scrollRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     checkAuth();
@@ -57,7 +52,7 @@ export default function Home() {
     }
   }, [messages]);
 
-  const sendMessage = async (overrideMessage?: string) => {
+  const sendMessage = async (overrideMessage) => {
     const userMessage = overrideMessage || input.trim();
     if (!userMessage || loading) return;
 
@@ -90,7 +85,7 @@ export default function Home() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -288,3 +283,4 @@ export default function Home() {
     </div>
   );
 }
+

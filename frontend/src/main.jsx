@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import Home from './app/react-home';
 import './react-global.css';
 
-createRoot(document.getElementById('root')!).render(
-  <React.StrictMode><Home /></React.StrictMode>,
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <Home />
+  </React.StrictMode>,
 );
+
