@@ -2,6 +2,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { ClerkProvider } from "@clerk/react";
+import "./react-global.css";
 
 import Home from "./app/react-home";
 
