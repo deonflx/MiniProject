@@ -1,12 +1,10 @@
 import logging
 import json, os, re
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.http import JsonResponse
-from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
-from django.views.decorators.http import require_POST, require_GET
-from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.http import require_POST
 from .models import ChatSession, Loan
 
 User = get_user_model()
@@ -25,36 +23,15 @@ def body(request):
     try: return json.loads(request.body or "{}")
     except json.JSONDecodeError: return {}
 
-@require_POST
-@csrf_protect
-def signup(request):
-    data = body(request); name = str(data.get("name", "")).strip(); email = str(data.get("email", "")).strip().lower(); password = data.get("password", "")
-    if not name or not email or len(password) < 8: return JsonResponse({"error": "Name, email, and a password of at least 8 characters are required."}, status=400)
-    if User.objects.filter(email=email).exists(): return JsonResponse({"error": "User already exists"}, status=400)
-    user = User.objects.create_user(username=email, email=email, password=password, first_name=name)
-    auth_login(request, user)
-    return JsonResponse({"success": True, "user": {"name": name, "email": email}})
+def api_login_required(view_func):
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Unauthorized. Please sign in."}, status=401)
+        return view_func(request, *args, **kwargs)
+    return _wrapped
 
 @require_POST
-@csrf_protect
-def login(request):
-    data = body(request); user = authenticate(request, username=str(data.get("email", "")).lower(), password=data.get("password", ""))
-    if user is None: return JsonResponse({"error": "Invalid credentials"}, status=400)
-    auth_login(request, user)
-    return JsonResponse({"success": True, "user": {"name": user.first_name or user.username, "email": user.email}})
-
-@require_GET
-@ensure_csrf_cookie
-def me(request):
-    if not request.user.is_authenticated: return JsonResponse({"authenticated": False}, status=401)
-    return JsonResponse({"authenticated": True, "user": {"name": request.user.first_name or request.user.username, "email": request.user.email}})
-
-@require_POST
-def logout(request):
-    auth_logout(request); return JsonResponse({"success": True})
-
-@require_POST
-@login_required
+@api_login_required
 @csrf_protect
 def chat(request):
     data = body(request); session_id = str(data.get("sessionId", "")); message = str(data.get("message", "")).strip()
@@ -94,7 +71,7 @@ def chat(request):
     return JsonResponse({"response": reply, "session": {"sessionId": session.session_id, "stage": session.stage, "profile": session.profile, **session.state}, **session.state})
 
 @require_POST
-@login_required
+@api_login_required
 @csrf_protect
 def ocr_upload(request):
     file = request.FILES.get("file")

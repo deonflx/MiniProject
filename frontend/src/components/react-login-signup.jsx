@@ -1,4 +1,4 @@
-import { SignIn ,SignUp } from "@clerk/react";
+import { SignIn } from "@clerk/react";
 
 export default function Login() {
   return (
