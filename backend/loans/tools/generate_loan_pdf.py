@@ -1,10 +1,29 @@
+import os
 import re
+import time
 from pathlib import Path
 from django.conf import settings
 from langchain_core.tools import tool
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from ..models import Loan
+
+def purge_expired_pdfs(max_age_seconds: int = 1800):
+    """
+    P3: Auto-purge routine that deletes generated PDFs older than the retention window
+    (default: 30 minutes) to prevent sensitive financial documents from sitting indefinitely on disk.
+    """
+    pdf_dir = Path(settings.MEDIA_ROOT) / "pdfs"
+    if not pdf_dir.exists():
+        return
+    now = time.time()
+    for item in pdf_dir.glob("*.pdf"):
+        if item.is_file():
+            try:
+                if now - item.stat().st_mtime > max_age_seconds:
+                    item.unlink(missing_ok=True)
+            except Exception:
+                pass
 
 def create_generate_loan_pdf_tool(get_session):
     @tool
@@ -21,6 +40,9 @@ def create_generate_loan_pdf_tool(get_session):
         loan = Loan.objects.filter(name__iexact=loanName.strip()).first()
         if not loan or loan.external_id not in session.state.get("availableLoans", []):
             return {"success": False, "message": "That loan is not in the available products list."}
+
+        # P3: Purge expired loan PDFs before creating a new one
+        purge_expired_pdfs(max_age_seconds=1800)
 
         safe_session_id = re.sub(r"[^a-zA-Z0-9_-]", "_", session.session_id)
         pdf_dir = Path(settings.MEDIA_ROOT) / "pdfs"

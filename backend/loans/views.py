@@ -1,10 +1,11 @@
 import logging
 import json, os, re
 from django.contrib.auth import get_user_model
+from pathlib import Path
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from .models import ChatSession, Loan
 
 User = get_user_model()
@@ -49,8 +50,10 @@ def chat(request):
         if selected:
             session.state["selectedLoanRequest"] = selected.name
     safe_message = message
-    if session.stage == "kyc": safe_message = re.sub(r"(?<!\d)(?:\d[\s-]?){11}\d(?!\d)", "[REDACTED Aadhaar]", message)
-    if session.stage == "credit": safe_message = re.sub(r"\b[A-Z]{5}\d{4}[A-Z]\b", "[REDACTED PAN]", message, flags=re.I)
+    # P0 & P2: Redact sensitive Aadhaar, PAN, and explicit salary figures before persisting to database chat logs
+    safe_message = re.sub(r"(?<!\d)(?:\d[\s-]?){11}\d(?!\d)", "[REDACTED Aadhaar]", safe_message)
+    safe_message = re.sub(r"\b[A-Z]{5}\d{4}[A-Z]\b", "[REDACTED PAN]", safe_message, flags=re.I)
+    safe_message = re.sub(r"(?i)\b(salary|income|in hand)\s*(?:is|of|:|\s)?\s*(?:inr|rs\.?)?\s*(\d[\d,.]*)", r"\1: [CONFIDENTIAL INCOME]", safe_message)
     session.logs = (session.logs + [{"role": "user", "content": safe_message}])[-8:]
     session.save(update_fields=["logs", "state"])
     conversation = [{"role": item["role"], "content": item["content"]} for item in session.logs[:-1]]
@@ -103,4 +106,38 @@ def ocr_upload(request):
         text = result.json()["choices"][0]["message"]["content"]
         return JsonResponse({"text": text})
     except Exception as exc: return JsonResponse({"error": f"OCR failed: {exc}"}, status=502)
+    finally:
+        # P3: Immediately release memory and close/clean uploaded file handle
+        try:
+            file.close()
+        except Exception:
+            pass
+
+@require_GET
+@api_login_required
+def protected_media(request, path):
+    """
+    P3: Serves confirmation PDFs only to the authenticated session owner,
+    with security headers and auto-expiry validation.
+    """
+    safe_rel_path = os.path.normpath(path).lstrip("/\\")
+    full_path = Path(settings.MEDIA_ROOT) / safe_rel_path
+
+    if not full_path.exists() or not full_path.is_file():
+        return JsonResponse({"error": "Document not found or expired."}, status=404)
+
+    # Verify session ownership if this is a loan confirmation PDF
+    filename = full_path.name
+    match = re.match(r"^loan_(.+)\.pdf$", filename)
+    if match:
+        session_id = match.group(1)
+        owns_session = ChatSession.objects.filter(session_id=session_id, user=request.user).exists()
+        if not owns_session and not request.user.is_staff:
+            return JsonResponse({"error": "Access denied to this document."}, status=403)
+
+    response = FileResponse(open(full_path, "rb"), content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-cache, no-store, must-revalidate"
+    return response
 

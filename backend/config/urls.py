@@ -6,6 +6,7 @@ from loans import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/chat/", views.chat), path("api/ocr/upload/", views.ocr_upload),
-    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    path("api/chat/", views.chat),
+    path("api/ocr/upload/", views.ocr_upload),
+    re_path(r"^media/(?P<path>.*)$", views.protected_media),
 ]

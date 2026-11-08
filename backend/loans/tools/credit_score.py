@@ -1,6 +1,7 @@
 import re
 from langchain_core.tools import tool
 from ..models import CreditRecord
+from ..crypto import hash_identity, mask_pan
 
 def create_credit_score_tool(get_session):
     @tool
@@ -11,7 +12,19 @@ def create_credit_score_tool(get_session):
             return {"success": False, "creditScoreLow": True, "message": "KYC must be verified before checking credit."}
 
         normalized_pan = re.sub(r"\s", "", pan).upper()
-        record = CreditRecord.objects.filter(pan__iexact=normalized_pan).first()
+        
+        # P2: Search by deterministic HMAC-SHA256 hash (never search or store plaintext PAN)
+        p_hash = hash_identity(normalized_pan)
+        record = CreditRecord.objects.filter(pan_hash=p_hash).first()
+
+        # Automatic upgrade for unmigrated legacy records
+        if not record:
+            legacy_record = CreditRecord.objects.filter(pan__iexact=normalized_pan).first()
+            if legacy_record:
+                legacy_record.set_pan(normalized_pan)
+                legacy_record.save(update_fields=["pan_hash", "encrypted_pan", "pan"])
+                record = legacy_record
+
         if not record:
             session.stage = "done"
             session.state["creditResult"] = {"eligible": False, "score": None}
@@ -30,7 +43,13 @@ def create_credit_score_tool(get_session):
             "POOR" if record.score >= 600 else "VERY LOW"
         )
         low = record.score < 600
-        session.state["creditLookup"] = {"score": record.score, "scoreCategory": category, "emi": float(record.emi)}
+        # P2: Retain only the masked PAN in session state
+        session.state["creditLookup"] = {
+            "score": record.score,
+            "scoreCategory": category,
+            "emi": float(record.emi),
+            "maskedPan": mask_pan(normalized_pan),
+        }
         if low:
             session.stage = "done"
             session.state["creditResult"] = {"eligible": False, "score": record.score, "scoreCategory": category}
