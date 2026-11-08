@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import LoginSignup from '../components/react-login-signup';
 import { apiFetch, API_BASE } from '../api';
 import { User as UserIcon, ImagePlus, Loader2 } from 'lucide-react';
+import './react-home.css';
 
 export default function Home() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -27,6 +28,7 @@ export default function Home() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
   const sendMessage = async (overrideMessage) => {
     const userMessage = overrideMessage || input.trim();
     if (!userMessage || loading) return;
@@ -94,8 +96,8 @@ export default function Home() {
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center h-screen bg-zinc-50 dark:bg-zinc-950">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
       </div>
     );
   }
@@ -108,31 +110,39 @@ export default function Home() {
   const firstName = user?.firstName || displayName.split(' ')[0] || 'there';
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
+    <div className="home-container">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg ring-2 ring-indigo-500/20">
+      <header className="header">
+        <div className="header-left">
+          <div className="header-avatar">
             A
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">Loan Assistant</h1>
-              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-              <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <div className="header-title-row">
+              <h1 className="header-title">Loan Assistant</h1>
+              <span className="header-divider">|</span>
+              <div className="header-user-info">
                 <UserIcon size={12} />
                 <span>{displayName}</span>
               </div>
             </div>
-            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 capitalize flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${stage === 'done' ? 'bg-green-500' : stage === 'kyc' || stage === 'credit' ? 'bg-amber-500' : 'bg-indigo-500'} animate-pulse`} />
+            <p className="header-stage-info">
+              <span
+                className={`stage-dot ${
+                  stage === 'done'
+                    ? 'stage-dot-done'
+                    : stage === 'kyc' || stage === 'credit'
+                    ? 'stage-dot-pending'
+                    : ''
+                }`}
+              />
               Stage: {stage}
               {pdfPath && (
                 <a
                   href={pdfPath.startsWith('/media/') ? `${API_BASE}${pdfPath}` : pdfPath}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 text-indigo-400 hover:text-indigo-300 underline"
+                  className="header-pdf-link"
                 >
                   View PDF
                 </a>
@@ -140,8 +150,8 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:block px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-[10px] font-mono text-zinc-500 dark:text-zinc-500">
+        <div className="header-right">
+          <div className="session-pill">
             ID: {sessionId}
           </div>
           <UserButton />
@@ -149,15 +159,12 @@ export default function Home() {
       </header>
 
       {/* Chat History */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
-      >
+      <div ref={scrollRef} className="chat-history">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 max-w-sm mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            <div className="w-16 h-16 rounded-3xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center text-3xl mb-2 shadow-inner">👋</div>
-            <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">Hello {firstName}!</h2>
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed">
+          <div className="chat-welcome">
+            <div className="chat-welcome-icon">👋</div>
+            <h2 className="chat-welcome-title">Hello {firstName}!</h2>
+            <p className="chat-welcome-text">
               I'm your Loan Assistant. I can help you check your loan eligibility in minutes. Let's start with your basic details.
             </p>
           </div>
@@ -166,15 +173,16 @@ export default function Home() {
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+            className={`message-row ${
+              msg.role === 'user' ? 'message-row-user' : 'message-row-assistant'
+            }`}
           >
             <div
-              className={`max-w-[85%] px-5 py-3.5 rounded-2xl shadow-sm text-sm leading-relaxed ${msg.role === 'user'
-                ? 'bg-indigo-600 text-white rounded-tr-none'
-                : 'bg-white dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-800 rounded-tl-none'
-                }`}
+              className={`message-bubble ${
+                msg.role === 'user' ? 'message-bubble-user' : 'message-bubble-assistant'
+              }`}
             >
-              <div className="whitespace-pre-wrap max-w-none">
+              <div className="markdown-content">
                 <ReactMarkdown
                   components={{
                     a: ({ node, ...props }) => {
@@ -188,7 +196,7 @@ export default function Home() {
                         <a
                           {...props}
                           href={fullHref}
-                          className="text-indigo-600 dark:text-indigo-400 underline hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+                          className="markdown-link"
                           target="_blank"
                           rel="noopener noreferrer"
                         />
@@ -204,55 +212,60 @@ export default function Home() {
         ))}
 
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-5 py-3.5 rounded-2xl rounded-tl-none shadow-sm flex gap-1.5 items-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600 animate-bounce [animation-delay:-0.3s]" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600 animate-bounce [animation-delay:-0.15s]" />
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-400 dark:bg-zinc-600 animate-bounce" />
+          <div className="typing-row">
+            <div className="typing-bubble">
+              <div className="typing-dot typing-dot-1" />
+              <div className="typing-dot typing-dot-2" />
+              <div className="typing-dot" />
             </div>
           </div>
         )}
       </div>
 
       {/* Input Area */}
-      <div className="p-6 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
-        <div className="max-w-4xl mx-auto flex gap-3 relative">
+      <div className="input-area-container">
+        <div className="input-bar">
           <input
             type="file"
             ref={fileInputRef}
-            className="hidden"
+            className="file-input-hidden"
             accept="image/*"
             onChange={handleFileUpload}
           />
           <button
-            className="p-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-2xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
+            className="upload-doc-btn"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading || loading}
             title="Upload Document (ID or Salary Slip)"
           >
-            {uploading ? <Loader2 className="animate-spin" size={20} /> : <div className="flex items-center gap-1"><ImagePlus size={20} /><span className="text-[10px] font-bold">UPLOAD DOC</span></div>}
+            {uploading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <div className="upload-doc-label">
+                <ImagePlus size={20} />
+                <span className="upload-doc-text">UPLOAD DOC</span>
+              </div>
+            )}
           </button>
           <input
-            className="flex-1 px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500/20 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-600 text-sm transition-all"
+            className="chat-text-input"
             placeholder="Type your message..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           />
           <button
-            className={`px-6 py-2 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${loading
-              ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed'
-              : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-indigo-600/20'
-              }`}
+            className={`send-button ${
+              loading ? 'send-button-disabled' : 'send-button-active'
+            }`}
             onClick={() => sendMessage()}
             disabled={loading}
           >
             Send
           </button>
         </div>
-        <p className="text-[10px] text-zinc-400 text-center mt-3 uppercase tracking-widest font-semibold">Loan Assistant</p>
+        <p className="footer-caption">Loan Assistant</p>
       </div>
     </div>
   );
 }
-
